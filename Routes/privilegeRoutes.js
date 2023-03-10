@@ -9,4 +9,5 @@ router.post('/', privilegeController.createPrivilege);
 // Route to claim a privilege
 router.post('/:privilege_id/claim', privilegeController.claimPrivilege);
 
+
 module.exports = router;

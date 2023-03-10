@@ -1,18 +1,6 @@
 const mongoose = require("mongoose");
 
-const privilegeSchema = new mongoose.Schema({
-  wallet_address: {
-    type: String,
-    required: true,
-  },
-  nft_collection_address: {
-    type: String,
-    required: true,
-  },
-  token_id: {
-    type: Number,
-    required: true,
-  },
+const utilitySchema = new mongoose.Schema({
   utility_name: {
     type: String,
     required: true,
@@ -32,7 +20,29 @@ const privilegeSchema = new mongoose.Schema({
   },
 });
 
+const tokenSchema = new mongoose.Schema({
+  token_id: {
+    type: String,
+    required: true,
+  },
+  utility: {
+    type: utilitySchema,
+    required: true,
+  },
+});
 
-const Privilege = mongoose.model('Privilege',privilegeSchema);
+const privilegeSchema = new mongoose.Schema({
+  wallet_address: {
+    type: String,
+    required: true,
+  },
+  nft_collection_address: {
+    type: String,
+    required: true,
+  },
+  tokens: [tokenSchema],
+});
+
+const Privilege = mongoose.model("Privilege", privilegeSchema);
 
 module.exports = Privilege;
