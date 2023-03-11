@@ -15,7 +15,6 @@ const utilitySchema = new mongoose.Schema({
   },
   is_claimed: {
     type: Boolean,
-    required: true,
     default: false,
   },
 });
@@ -26,7 +25,7 @@ const tokenSchema = new mongoose.Schema({
     required: true,
   },
   utility: {
-    type: utilitySchema,
+    type: [utilitySchema],
     required: true,
   },
 });

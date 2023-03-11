@@ -15,6 +15,7 @@ exports.createPrivilege = async (req, res) => {
     } = req.body;
 
     // Create a new privilege object using the request body
+    // console.log(utility_id)
     const privilege = new Privilege({
       wallet_address,
       nft_collection_address,
@@ -37,10 +38,10 @@ exports.createPrivilege = async (req, res) => {
     res.status(201).json({
       privilege_id: privilege.id,
       token_id: privilege.tokens.token_id,
-      utility_id: privilege.tokens.utility.utility_id,
-      utility_name: privilege.tokens.utility.utility_name,
-      utility_claimed: privilege.tokens.utility.is_claimed
-    });
+      utility_id: privilege.tokens[0].utility.utility_id,
+      utility_name: privilege.tokens[0].utility.utility_name,
+      utility_claimed: privilege.tokens[0].utility.is_claimed,
+    });[0]
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -68,19 +69,32 @@ exports.claimPrivilege = async (req, res) => {
     }
 
     const my_token_id = nft_utility.tokens.token_id;
-    const my_utility = nft_utility.tokens.utility
+    const my_utility = nft_utility.tokens[0].utility;
+
+    console.log(nft_utility);
+    console.log("now");
+    console.log(nft_utility.tokens);
+    console.log("then");
+    console.log(nft_utility.tokens[0].utility)
 
     // const token = nft_utility.tokens.find((t) => t.token_id === token_id);
     // const utility = token.utility;
 
-    if (!my_utility.is_claimed) {
+    if (!my_utility) {
       res.status(400).json({
-        error: "Utility is already claimed or missing.",
+        error: "Utility is missing.",
       });
       return;
     }
 
-    utility.is_claimed = true;
+    if (my_utility.is_claimed) {
+      res.status(400).json({
+        error: "Utility is already claimed.",
+      });
+      return;
+    }
+
+    my_utility.is_claimed = true;
 
     // Save updated privilege object to the database
     await nft_utility.save();
@@ -114,9 +128,9 @@ exports.claimPrivilege = async (req, res) => {
       wallet_address: claim.wallet_address,
       nft_collection_address: claim.nft_collection_address,
       token_id: claim.token_with_utility.token_id,
-      utility_id: claim.token_with_utility.utility.utility_id,
-      transfer: claim.token_with_utility.utility.action.transfer,
-      transfer: claim.token_with_utility.utility.action.redeem,
+      utility_id: claim.token_with_utility[0].utility.utility_id,
+      transfer: claim.token_with_utility[0].utility.action.transfer,
+      transfer: claim.token_with_utility[0].utility.action.redeem,
     });
   } catch (err) {
     console.error(err);
