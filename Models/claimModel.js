@@ -1,51 +1,27 @@
 const mongoose = require("mongoose");
 
-const actionSchema = new mongoose.Schema({
-  transfer:{
-    type:Boolean,
-    required:true,
-    default:false
-  },
-  redeem:{
-    type:Boolean,
-    required:true,
-    default:false,
-  }
-});
-
-const utilitySchema = new mongoose.Schema({
-  utility_id: {
-    type: Number,
-    required: true,
-  },
-  action:[actionSchema]
-  
-});
-
-const tokenSchema = new mongoose.Schema({
-  token_id: {
-    type: String,
-    required: true,
-  },
-  utility: {
-    type: utilitySchema,
-    required: true,
-  },
-});
-
 const claimSchema = new mongoose.Schema({
-  wallet_address:{
-    type:String,
-    required:true,
-  },
-  nft_collection_address:{
-    type:String,
-    required:true,
-  },
-  token_with_utility:[tokenSchema]
-  
-})
-
+  wallet_address: { type: String, required: true },
+  nft_collection_addresses: [
+    {
+      nft_collection_address: { type: String, required: true },
+      tokens: [
+        {
+          token_id: { type: String, required: true },
+          utilities: [
+            {
+              utility_id: { type: String, required: true },
+              utility_name: { type: String, required: true },
+              expiration_time: { type: Date, required: true },
+              transferred: { type: Boolean, default: false },
+              redeemed: { type: Boolean, default: false },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
 
 const Claim = mongoose.model("Claim", claimSchema);
 
