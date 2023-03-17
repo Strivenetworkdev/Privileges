@@ -127,8 +127,6 @@ exports.claimPrivilege = async (req, res) => {
 
     //  Check if the user has a claim database
     let claim = await Claim.findOne({ wallet_address });
-    let nftCollectionIndex, tokenIndex;
-    // let nft_collections = [];
 
     if (!claim) {
       // If the user does not have a claim database, create a new one
@@ -238,6 +236,7 @@ exports.claimPrivilege = async (req, res) => {
     await claim.save();
 
     res.status(200).json({
+      claim_id: claim.id,
       message: `Utility ${utility_id} has been claimed for token ${token_id}`,
     });
   } catch (error) {
@@ -247,7 +246,7 @@ exports.claimPrivilege = async (req, res) => {
 };
 
 //  Transferring a Privilege
-const transferPrivilege = async (req, res) => {
+exports.transferPrivilege = async (req, res) => {
   const {
     sender_wallet_address,
     receiver_wallet_address,
@@ -318,13 +317,13 @@ const transferPrivilege = async (req, res) => {
     await Claim.updateOne(
       {
         wallet_address: sender_wallet_address,
-        "nft_collections.nft_collection_address": nft_collection_address,
-        "nft_collections.tokens.token_id": token_id,
-        "nft_collections.tokens.utilities.utility_id": utility_id,
+        "nft_collection_addresses.nft_collection_address": nft_collection_address,
+        "nft_collection_addresses.tokens.token_id": token_id,
+        "nft_collection_addresses.tokens.utilities.utility_id": utility_id,
       },
       {
         $set: {
-          "nft_collections.$[nftCollection].tokens.$[token].utilities.$[utility].transferred": true,
+          "nft_collection_addresses.$[nftCollection].tokens.$[token].utilities.$[utility].transferred": true,
         },
       },
       {
@@ -355,7 +354,7 @@ const transferPrivilege = async (req, res) => {
                     utility_id,
                     utility_name,
                     expiration_time,
-                    transferred: false,
+                    transferred: true,
                     redeemed: false,
                   },
                 ],
