@@ -317,7 +317,8 @@ exports.transferPrivilege = async (req, res) => {
     await Claim.updateOne(
       {
         wallet_address: sender_wallet_address,
-        "nft_collection_addresses.nft_collection_address": nft_collection_address,
+        "nft_collection_addresses.nft_collection_address":
+          nft_collection_address,
         "nft_collection_addresses.tokens.token_id": token_id,
         "nft_collection_addresses.tokens.utilities.utility_id": utility_id,
       },
@@ -442,5 +443,23 @@ exports.transferPrivilege = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getCreatedPrivileges = async (req, res) => {
+  const { wallet_address } = req.params;
+
+  try {
+    const privileges = await Privilege.find({
+      creator_wallet_address: wallet_address,
+    });
+    return res.status(200).json({ privileges });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({
+        message: "Failed to get created privileges.",
+        error: error.message,
+      });
   }
 };
