@@ -27,7 +27,7 @@ exports.createPrivilege = async (req, res) => {
 
       // Create the token array with the utility array within each token
       for (let i = 0; i < 5; i++) {
-        const token_id = `token${i + 1}`;
+        const token_id = i;
         privilege.tokens.push({
           token_id,
           utilities: [
@@ -355,7 +355,7 @@ exports.transferPrivilege = async (req, res) => {
                     utility_id,
                     utility_name,
                     expiration_time,
-                    transferred: true,
+                    transferred: false,
                     redeemed: false,
                   },
                 ],
@@ -382,7 +382,7 @@ exports.transferPrivilege = async (req, res) => {
                   utility_id,
                   utility_name,
                   expiration_time,
-                  transferred: true,
+                  transferred: false,
                   redeemed: false,
                 },
               ],
@@ -404,7 +404,7 @@ exports.transferPrivilege = async (req, res) => {
                 utility_id,
                 utility_name,
                 expiration_time,
-                transferred: true,
+                transferred: false,
                 redeemed: false,
               },
             ],
@@ -423,7 +423,7 @@ exports.transferPrivilege = async (req, res) => {
               utility_id,
               utility_name,
               expiration_time,
-              transferred: true,
+              transferred: false,
               redeemed: false,
             });
           } else {
@@ -451,15 +451,49 @@ exports.getCreatedPrivileges = async (req, res) => {
 
   try {
     const privileges = await Privilege.find({
-      creator_wallet_address: wallet_address,
+      wallet_address,
     });
-    return res.status(200).json({ privileges });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({
-        message: "Failed to get created privileges.",
-        error: error.message,
+    console.log(privileges);
+
+    // Create an empty object to store the privileges
+    const result = {};
+
+    privileges.forEach((privilege) => {
+      const nftCollectionAddress = privilege.nft_collection_address;
+      const utilities = [];
+      var enough = false;
+
+      privilege.tokens.forEach((token) => {
+        token.utilities.forEach((utility) => {
+          if (!enough) {
+            const { utility_id, utility_name } = utility;
+            utilities.push({ utility_id, utility_name });
+          }
+        });
+        enough = true;
       });
+      // for (var i = 0; i < 1; i++) {
+      //   const token_1 = privilege.tokens[0];
+      //   token_1.utilities.forEach((utility) => {
+      //       const { utility_id, utility_name } = utility;
+      //       utilities.push({ utility_id, utility_name });
+          
+      //   });
+      // }
+
+      if (utilities.length > 0) {
+        if (!result[nftCollectionAddress]) {
+          result[nftCollectionAddress] = { utilities };
+        }
+        // result[nftCollectionAddress].utilities.push(...utilities);
+      }
+    });
+
+    return res.status(200).json({ result });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to get created privileges.",
+      error: error.message,
+    });
   }
 };

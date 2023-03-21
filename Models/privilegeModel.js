@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const TokenSchema = new mongoose.Schema({
-  token_id: { type: String, required: true },
+  token_id: { type: Number, required: true },
   utilities: [{
     utility_id: { type: String, required: true },
     utility_name: { type: String, required: true },

@@ -7,7 +7,7 @@ const claimSchema = new mongoose.Schema({
       nft_collection_address: { type: String, required: true },
       tokens: [
         {
-          token_id: { type: String, required: true },
+          token_id: { type: Number, required: true },
           utilities: [
             {
               utility_id: { type: String, required: true },
