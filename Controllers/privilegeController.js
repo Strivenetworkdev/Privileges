@@ -477,7 +477,7 @@ exports.getCreatedPrivileges = async (req, res) => {
       //   token_1.utilities.forEach((utility) => {
       //       const { utility_id, utility_name } = utility;
       //       utilities.push({ utility_id, utility_name });
-          
+
       //   });
       // }
 
@@ -495,5 +495,57 @@ exports.getCreatedPrivileges = async (req, res) => {
       message: "Failed to get created privileges.",
       error: error.message,
     });
+  }
+};
+
+exports.redeemPrivilege = async (req, res) => {
+  const { wallet_address, nft_collection_address, token_id, utility_id } =
+    req.body;
+
+  try {
+    const claim = await Claim.findOne({ wallet_address });
+    if (!claim) {
+      return res
+        .status(404)
+        .json({ message: "Claim not found for the given wallet address" });
+    }
+
+    const nftCollectionIndex = claim.nft_collection_addresses.findIndex(
+      (nftCollection) =>
+        nftCollection.nft_collection_address === nft_collection_address
+    );
+    if (nftCollectionIndex === -1) {
+      return res
+        .status(404)
+        .json({ message: "NFT collection address not found in claim" });
+    }
+
+    const tokenIndex = claim.nft_collection_addresses[
+      nftCollectionIndex
+    ].tokens.findIndex((token) => token.token_id === token_id);
+    if (tokenIndex === -1) {
+      return res.status(404).json({ message: "Token ID not found in claim" });
+    }
+
+    const utilityIndex = claim.nft_collection_addresses[
+      nftCollectionIndex
+    ].tokens[tokenIndex].utilities.findIndex(
+      (utility) => utility.utility_id === utility_id
+    );
+    if (utilityIndex === -1) {
+      return res.status(404).json({ message: "Utility ID not found in claim" });
+    }
+
+    claim.nft_collection_addresses[nftCollectionIndex].tokens[
+      tokenIndex
+    ].utilities[utilityIndex].redeemed = true;
+
+    await claim.save();
+
+    return res.status(200).json({ message: "Utility successfully redeemed" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Failed to redeem utility", error: error.message });
   }
 };

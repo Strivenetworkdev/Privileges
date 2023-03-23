@@ -12,6 +12,9 @@ router.post("/:privilege_id/claim", privilegeController.claimPrivilege);
 // Route to transfer a privilege
 router.post("/:claim_id/transfer", privilegeController.transferPrivilege);
 
+// Route to redeem a privilege
+router.post("/:claim_id/redeem", privilegeController.redeemPrivilege);
+
 // Returning the created privileges to the user as per the wallet address
 router.get("/:wallet_address", privilegeController.getCreatedPrivileges);
 
