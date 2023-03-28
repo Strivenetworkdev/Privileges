@@ -11,7 +11,7 @@ const TokenSchema = new mongoose.Schema({
       is_claimed: { type: Boolean, default: false },
       expiration_time: { type: Date, required: true },
       is_expirable: { type: String, default: true },
-      creation_time: { type: String, default: true },
+      creation_time: { type: Date, default: true },
     },
   ],
 });
@@ -21,6 +21,7 @@ const nftSchema = new mongoose.Schema({
   nft_collection_name: { type: String, required: true },
   nft_collection_image: { type: String, required: true },
   nft_collection_description: { type: String, required: true },
+  nft_collection_tokens: { type: Number, required: true },
 });
 
 const privilegeSchema = new mongoose.Schema({

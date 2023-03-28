@@ -4,29 +4,44 @@ const Claim = require("../Models/claimModel");
 // Creating a new privilege
 
 exports.createPrivilege = async (req, res) => {
+  const creation_time = new Date();
   const {
     wallet_address,
     nft_collection_address,
+    nft_collection_name,
+    nft_collection_image,
+    nft_collection_description,
+    nft_collection_tokens,
     utility_name,
     utility_id,
+    utility_image,
+    utility_description,
     expiration_time,
   } = req.body;
   try {
     let privilege = await Privilege.findOne({
       wallet_address,
-      nft_collection_address,
+      nft_details: { $elemMatch: { nft_collection_address } },
     });
 
     if (!privilege) {
       // If a privilege document does not already exist, create a new one
       privilege = new Privilege({
         wallet_address,
-        nft_collection_address,
+        nft_details: [
+          {
+            nft_collection_address,
+            nft_collection_name,
+            nft_collection_image,
+            nft_collection_description,
+            nft_collection_tokens,
+          },
+        ],
         tokens: [],
       });
 
       // Create the token array with the utility array within each token
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < nft_collection_tokens; i++) {
         const token_id = i;
         privilege.tokens.push({
           token_id,
@@ -34,8 +49,12 @@ exports.createPrivilege = async (req, res) => {
             {
               utility_id,
               utility_name,
+              utility_image,
+              utility_description,
               expiration_time,
               is_claimed: false,
+              is_expirable: true,
+              creation_time: creation_time,
             },
           ],
         });
@@ -46,8 +65,12 @@ exports.createPrivilege = async (req, res) => {
         token.utilities.push({
           utility_id,
           utility_name,
+          utility_image,
+          utility_description,
           expiration_time,
           is_claimed: false,
+          is_expirable: true,
+          creation_time: creation_time,
         });
       });
     }
