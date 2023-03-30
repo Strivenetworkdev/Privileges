@@ -10,12 +10,12 @@ const claimSchema = new mongoose.Schema({
           token_id: { type: Number, required: true },
           utilities: [
             {
-              utility_id: { type: String, required: true },
+              utility_id: { type: Number, required: true },
               utility_name: { type: String, required: true },
               utility_image: { type: String, required: true },
               utility_description: { type: String, default: "" },
               expiration_time: { type: Date, required: true },
-              is_expirable: { type: String, default: true },
+              is_expirable: { type: ttBoolean, default: true },
               transferred: { type: Boolean, default: false },
               redeemed: { type: Boolean, default: false },
               is_listed: { type: Boolean, default: false },

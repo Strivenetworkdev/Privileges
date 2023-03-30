@@ -4,14 +4,14 @@ const TokenSchema = new mongoose.Schema({
   token_id: { type: Number, required: true },
   utilities: [
     {
-      utility_id: { type: String, required: true },
+      utility_id: { type: Number, required: true },
       utility_name: { type: String, required: true },
       utility_image: { type: String, required: true },
       utility_description: { type: String, default: "" },
       is_claimed: { type: Boolean, default: false },
       expiration_time: { type: Date, required: true },
-      is_expirable: { type: String, default: true },
-      creation_time: { type: Date, default: true },
+      is_expirable: { type: Boolean, default: true },
+      creation_time: { type: Date, default: Date.now },
     },
   ],
 });

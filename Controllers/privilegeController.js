@@ -21,7 +21,7 @@ exports.createPrivilege = async (req, res) => {
   try {
     let privilege = await Privilege.findOne({
       wallet_address,
-      nft_details: { $elemMatch: { nft_collection_address } },
+      "nft_details.nft_collection_address": nft_collection_address,
     });
 
     if (!privilege) {
@@ -60,6 +60,7 @@ exports.createPrivilege = async (req, res) => {
         });
       }
     } else {
+      console.log(creation_time);
       // If a privilege document already exists, add the new utility to the utility array of each token
       privilege.tokens.forEach((token) => {
         token.utilities.push({
@@ -67,10 +68,10 @@ exports.createPrivilege = async (req, res) => {
           utility_name,
           utility_image,
           utility_description,
-          expiration_time,
           is_claimed: false,
+          expiration_time,
           is_expirable: true,
-          creation_time: creation_time,
+          creation_time: new Date(),
         });
       });
     }
@@ -93,12 +94,15 @@ exports.createPrivilege = async (req, res) => {
 
 // Claiming a privilege
 exports.claimPrivilege = async (req, res) => {
+  const claim_time = new Date();
   const {
     wallet_address,
     nft_collection_address,
     token_id,
     utility_id,
     utility_name,
+    utility_image,
+    utility_description,
   } = req.body;
   try {
     // Check if the privilege exists
@@ -148,6 +152,8 @@ exports.claimPrivilege = async (req, res) => {
       }
     );
 
+    await Privilege.save();
+
     //  Check if the user has a claim database
     let claim = await Claim.findOne({ wallet_address });
 
@@ -165,10 +171,16 @@ exports.claimPrivilege = async (req, res) => {
                   {
                     utility_id,
                     utility_name,
+                    utility_image,
+                    utility_description,
                     expiration_time:
                       token.utilities[utilityIndex].expiration_time,
                     transferred: false,
                     redeemed: false,
+                    is_listed: false,
+                    list_price: 0,
+                    buyer_address: "0",
+                    claim_time: claim_time,
                   },
                 ],
               },
@@ -192,10 +204,16 @@ exports.claimPrivilege = async (req, res) => {
                 {
                   utility_id,
                   utility_name,
+                  utility_image,
+                  utility_description,
                   expiration_time:
                     token.utilities[utilityIndex].expiration_time,
                   transferred: false,
                   redeemed: false,
+                  is_listed: false,
+                  list_price: 0,
+                  buyer_address: "0",
+                  claim_time: claim_time,
                 },
               ],
             },
@@ -214,9 +232,15 @@ exports.claimPrivilege = async (req, res) => {
               {
                 utility_id,
                 utility_name,
+                utility_image,
+                utility_description,
                 expiration_time: token.utilities[utilityIndex].expiration_time,
                 transferred: false,
                 redeemed: false,
+                is_listed: false,
+                list_price: 0,
+                buyer_address: "0",
+                claim_time: claim_time,
               },
             ],
           });
@@ -230,25 +254,37 @@ exports.claimPrivilege = async (req, res) => {
 
           if (utilityIndex === -1) {
             // If the user does not have a claim database for this utility_id, add it
-            claim.nft_collections[nftCollectionIndex].tokens[
+            claim.nft_collection_addresses[nftCollectionIndex].tokens[
               tokenIndex
             ].utilities.push({
               utility_id,
               utility_name,
+              utility_image,
+              utility_description,
               expiration_time: token.utilities[utilityIndex].expiration_time,
               transferred: false,
               redeemed: false,
+              is_listed: false,
+              list_price: 0,
+              buyer_address: "0",
+              claim_time: claim_time,
             });
           } else {
             // If the user already has a claim database for this utility_id, update it
-            claim.nft_collections[nftCollectionIndex].tokens[
+            claim.nft_collection_addresses[nftCollectionIndex].tokens[
               tokenIndex
             ].utilities[utilityIndex] = {
               utility_id,
               utility_name,
+              utility_image,
+              utility_description,
               expiration_time: token.utilities[utilityIndex].expiration_time,
               transferred: false,
               redeemed: false,
+              is_listed: false,
+              list_price: 0,
+              buyer_address: "0",
+              claim_time: claim_time,
             };
           }
         }
