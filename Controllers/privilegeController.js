@@ -100,13 +100,15 @@ exports.claimPrivilege = async (req, res) => {
     nft_collection_address,
     token_id,
     utility_id,
-    utility_name,
-    utility_image,
-    utility_description,
+    // utility_name,
+    // utility_image,
+    // utility_description,
   } = req.body;
   try {
     // Check if the privilege exists
-    const privilege = await Privilege.findOne({ nft_collection_address });
+    const privilege = await Privilege.findOne({
+      "nft_details.nft_collection_address": nft_collection_address,
+    });
 
     if (!privilege) {
       return res.status(404).json({
@@ -115,7 +117,9 @@ exports.claimPrivilege = async (req, res) => {
     }
 
     // Check if the utility exists and is not already claimed
-    const token = privilege.tokens.find((t) => t.token_id === token_id);
+    const token = privilege.tokens.find(
+      (t) => t.token_id === parseInt(token_id, 10)
+    );
     if (!token) {
       return res
         .status(404)
@@ -123,7 +127,7 @@ exports.claimPrivilege = async (req, res) => {
     }
 
     const utilityIndex = token.utilities.findIndex(
-      (u) => u.utility_id === utility_id
+      (u) => u.utility_id === parseInt(utility_id, 10)
     );
     if (utilityIndex === -1) {
       return res
@@ -137,22 +141,22 @@ exports.claimPrivilege = async (req, res) => {
     }
 
     // Update the privilege database to mark the utility as claimed
-    await Privilege.updateOne(
+    await Privilege.findOneAndUpdate(
       {
-        nft_collection_address,
+        "nft_details.nft_collection_address": nft_collection_address,
         "tokens.token_id": token_id,
-        "tokens.utilities.utility": utility_id,
+        "tokens.utilities": { $elemMatch: { utility_id: utility_id } },
       },
-      { $set: { "tokens.$[token].utilities.$[utility].is_claimed": true } },
+      { $set: { "tokens.$[token].utilities.is_claimed": true } },
       {
         arrayFilters: [
           { "token.token_id": token_id },
-          { "utility.utility_id": utility_id },
+          // { "utilities.utility_id": utility_id },
         ],
       }
     );
 
-    await Privilege.save();
+    await privilege.save();
 
     //  Check if the user has a claim database
     let claim = await Claim.findOne({ wallet_address });
@@ -170,9 +174,10 @@ exports.claimPrivilege = async (req, res) => {
                 utilities: [
                   {
                     utility_id,
-                    utility_name,
-                    utility_image,
-                    utility_description,
+                    utility_name: token.utilities[utilityIndex].utility_name,
+                    utility_image: token.utilities[utilityIndex].utility_image,
+                    utility_description:
+                      token.utilities[utilityIndex].utility_description,
                     expiration_time:
                       token.utilities[utilityIndex].expiration_time,
                     transferred: false,
@@ -203,9 +208,10 @@ exports.claimPrivilege = async (req, res) => {
               utilities: [
                 {
                   utility_id,
-                  utility_name,
-                  utility_image,
-                  utility_description,
+                  utility_name: token.utilities[utilityIndex].utility_name,
+                  utility_image: token.utilities[utilityIndex].utility_image,
+                  utility_description:
+                    token.utilities[utilityIndex].utility_description,
                   expiration_time:
                     token.utilities[utilityIndex].expiration_time,
                   transferred: false,
@@ -231,9 +237,10 @@ exports.claimPrivilege = async (req, res) => {
             utilities: [
               {
                 utility_id,
-                utility_name,
-                utility_image,
-                utility_description,
+                utility_name: token.utilities[utilityIndex].utility_name,
+                utility_image: token.utilities[utilityIndex].utility_image,
+                utility_description:
+                  token.utilities[utilityIndex].utility_description,
                 expiration_time: token.utilities[utilityIndex].expiration_time,
                 transferred: false,
                 redeemed: false,
@@ -258,9 +265,10 @@ exports.claimPrivilege = async (req, res) => {
               tokenIndex
             ].utilities.push({
               utility_id,
-              utility_name,
-              utility_image,
-              utility_description,
+              utility_name: token.utilities[utilityIndex].utility_name,
+              utility_image: token.utilities[utilityIndex].utility_image,
+              utility_description:
+                token.utilities[utilityIndex].utility_description,
               expiration_time: token.utilities[utilityIndex].expiration_time,
               transferred: false,
               redeemed: false,
@@ -275,9 +283,10 @@ exports.claimPrivilege = async (req, res) => {
               tokenIndex
             ].utilities[utilityIndex] = {
               utility_id,
-              utility_name,
-              utility_image,
-              utility_description,
+              utility_name: token.utilities[utilityIndex].utility_name,
+              utility_image: token.utilities[utilityIndex].utility_image,
+              utility_description:
+                token.utilities[utilityIndex].utility_description,
               expiration_time: token.utilities[utilityIndex].expiration_time,
               transferred: false,
               redeemed: false,
@@ -296,7 +305,7 @@ exports.claimPrivilege = async (req, res) => {
 
     res.status(200).json({
       claim_id: claim.id,
-      message: `Utility ${utility_id} has been claimed for token ${token_id}`,
+      message: `Utility ${utility_id} has been claimed for token ${token_id} with collection address ${nft_collection_address}`,
     });
   } catch (error) {
     console.error(error);
@@ -306,6 +315,7 @@ exports.claimPrivilege = async (req, res) => {
 
 //  Transferring a Privilege
 exports.transferPrivilege = async (req, res) => {
+  const transfer_time = new Date();
   const {
     sender_wallet_address,
     receiver_wallet_address,
@@ -316,6 +326,36 @@ exports.transferPrivilege = async (req, res) => {
   } = req.body;
 
   try {
+    // Find the utility to be transferred in the actual privilege database to access the utility properties
+    const privilege = await Privilege.findOne({
+      "nft_details.nft_collection_address": nft_collection_address,
+    });
+
+    if (!privilege) {
+      return res.status(404).json({
+        message: `Privilege not found for nft_collection_address ${nft_collection_address}`,
+      });
+    }
+
+    // Check if the utility exists and is not already claimed
+    const token = privilege.tokens.find(
+      (t) => t.token_id === parseInt(token_id, 10)
+    );
+    if (!token) {
+      return res
+        .status(404)
+        .json({ message: `Token not found for token_id ${token_id}` });
+    }
+
+    const utilityIndex = token.utilities.findIndex(
+      (u) => u.utility_id === parseInt(utility_id, 10)
+    );
+    if (utilityIndex === -1) {
+      return res
+        .status(404)
+        .json({ message: `Utility not found for utility_id ${utility_id}` });
+    }
+
     // Check if the sender has a claim database
     const senderClaim = await Claim.findOne({
       wallet_address: sender_wallet_address,
@@ -338,62 +378,91 @@ exports.transferPrivilege = async (req, res) => {
     }
     const tokenIndex = senderClaim.nft_collection_addresses[
       nftCollectionIndex
-    ].tokens.findIndex((t) => t.token_id === token_id);
+    ].tokens.findIndex((t) => t.token_id === parseInt(token_id, 10));
     if (tokenIndex === -1) {
       return res
         .status(404)
         .json({ message: `Claim database not found for token_id ${token_id}` });
     }
-    const utilityIndex = senderClaim.nft_collection_addresses[
-      nftCollectionIndex
-    ].tokens[tokenIndex].utilities.findIndex(
-      (u) => u.utility_id === utility_id
-    );
-    if (utilityIndex === -1) {
-      return res.status(404).json({
-        message: `Claim database not found for utility_id ${utility_id}`,
-      });
+
+    for (let i = 0; i < senderClaim.nft_collection_addresses.length; i++) {
+      if (
+        senderClaim.nft_collection_addresses[i].nft_collection_address ===
+        nft_collection_address
+      ) {
+        const tokens = senderClaim.nft_collection_addresses[i].tokens;
+        console.log("yes");
+        for (let j = 0; j < tokens.length; j++) {
+          if (tokens[j].token_id === parseInt(token_id, 10)) {
+            const utilities = tokens[j].utilities;
+            console.log("yes");
+            for (let k = 0; k < utilities.length; k++) {
+              if (utilities[k].utility_id === parseInt(utility_id, 10)) {
+                if (utilities[k].transferred) {
+                  return res.status(400).json({
+                    message: `Utility ${utility_id} has already been transferred`,
+                  });
+                }
+                console.log("yes");
+                utilities[k].transferred = true;
+                utilities[k].transfer_time = new Date();
+              }
+            }
+            break;
+          }
+        }
+        break;
+      }
     }
 
-    // Check if the utility has already been transferred
-    if (
-      senderClaim.nft_collection_addresses[nftCollectionIndex].tokens[
-        tokenIndex
-      ].utilities[utilityIndex].transferred
-    ) {
-      return res.status(400).json({
-        message: `Utility ${utility_id} has already been transferred`,
-      });
-    }
+    await senderClaim.save();
+
+    // const utilityIndexOfClaim = senderClaim.nft_collection_addresses[
+    //   nftCollectionIndex
+    // ].tokens[tokenIndex].utilities.findIndex(
+    //   (u) => u.utility_id === parseInt(utility_id,10)
+    // );
+    // if (utilityIndexOfClaim === -1) {
+    //   return res.status(404).json({
+    //     message: `Claim database not found for utility_id ${utility_id}`,
+    //   });
+    // }
+
+    // // Check if the utility has already been transferred
+    // if (
+    //   senderClaim.nft_collection_addresses[nftCollectionIndex].tokens[
+    //     tokenIndex
+    //   ].utilities[utilityIndex].transferred
+    // ) {
+    //   return res.status(400).json({
+    //     message: `Utility ${utility_id} has already been transferred`,
+    //   });
+    // }
 
     // Get the expiration time from the sender's claim database
-    const expiration_time =
-      senderClaim.nft_collection_addresses[nftCollectionIndex].tokens[
-        tokenIndex
-      ].utilities[utilityIndex].expiration_time;
 
-    // Update the sender's claim database to mark the utility as transferred
-    await Claim.updateOne(
-      {
-        wallet_address: sender_wallet_address,
-        "nft_collection_addresses.nft_collection_address":
-          nft_collection_address,
-        "nft_collection_addresses.tokens.token_id": token_id,
-        "nft_collection_addresses.tokens.utilities.utility_id": utility_id,
-      },
-      {
-        $set: {
-          "nft_collection_addresses.$[nftCollection].tokens.$[token].utilities.$[utility].transferred": true,
-        },
-      },
-      {
-        arrayFilters: [
-          { "nftCollection.nft_collection_address": nft_collection_address },
-          { "token.token_id": token_id },
-          { "utility.utility_id": utility_id },
-        ],
-      }
-    );
+    // // Update the sender's claim database to mark the utility as transferred
+    // await Claim.updateOne(
+    //   {
+    //     wallet_address: sender_wallet_address,
+    //     "nft_collection_addresses.nft_collection_address":
+    //       nft_collection_address,
+    //     "nft_collection_addresses.tokens.token_id": token_id,
+    //     "nft_collection_addresses.tokens.utilities.utility_id": utility_id,
+    //   },
+    //   {
+    //     $set: {
+    //       "nft_collection_addresses.$[nftCollection].tokens.$[token].utilities.$[utility].transferred": true,
+    //     },
+    //   },
+    //   {
+    //     arrayFilters: [
+    //       { "nftCollection.nft_collection_address": nft_collection_address },
+    //       { "token.token_id": token_id },
+    //       { "utility.utility_id": utility_id },
+    //     ],
+    //   }
+    // );
     // Check if the receiver has a claim database
     let receiverClaim = await Claim.findOne({
       wallet_address: receiver_wallet_address,
@@ -412,10 +481,18 @@ exports.transferPrivilege = async (req, res) => {
                 utilities: [
                   {
                     utility_id,
-                    utility_name,
-                    expiration_time,
+                    utility_name: token.utilities[utilityIndex].utility_name,
+                    utility_image: token.utilities[utilityIndex].utility_image,
+                    utility_description:
+                      token.utilities[utilityIndex].utility_description,
+                    expiration_time:
+                      token.utilities[utilityIndex].expiration_time,
                     transferred: false,
                     redeemed: false,
+                    is_listed: false,
+                    list_price: 0,
+                    buyer_address: "0",
+                    transfer_time: transfer_time,
                   },
                 ],
               },
@@ -439,10 +516,17 @@ exports.transferPrivilege = async (req, res) => {
               utilities: [
                 {
                   utility_id,
-                  utility_name,
+                  utility_name: token.utilities[utilityIndex].utility_name,
+                  utility_image: token.utilities[utilityIndex].utility_image,
+                  utility_description:
+                    token.utilities[utilityIndex].utility_description,
                   expiration_time,
                   transferred: false,
                   redeemed: false,
+                  is_listed: false,
+                  list_price: 0,
+                  buyer_address: "0",
+                  transfer_time: transfer_time,
                 },
               ],
             },
@@ -461,10 +545,17 @@ exports.transferPrivilege = async (req, res) => {
             utilities: [
               {
                 utility_id,
-                utility_name,
-                expiration_time,
+                utility_name: token.utilities[utilityIndex].utility_name,
+                utility_image: token.utilities[utilityIndex].utility_image,
+                utility_description:
+                  token.utilities[utilityIndex].utility_description,
+                expiration_time: token.utilities[utilityIndex].expiration_time,
                 transferred: false,
                 redeemed: false,
+                is_listed: false,
+                list_price: 0,
+                buyer_address: "0",
+                transfer_time: transfer_time,
               },
             ],
           });
@@ -480,10 +571,17 @@ exports.transferPrivilege = async (req, res) => {
               tokenIndex
             ].utilities.push({
               utility_id,
-              utility_name,
-              expiration_time,
+              utility_name: token.utilities[utilityIndex].utility_name,
+              utility_image: token.utilities[utilityIndex].utility_image,
+              utility_description:
+                token.utilities[utilityIndex].utility_description,
+              expiration_time: token.utilities[utilityIndex].expiration_time,
               transferred: false,
               redeemed: false,
+              is_listed: false,
+              list_price: 0,
+              buyer_address: "0",
+              transfer_time: transfer_time,
             });
           } else {
             // If the receiver already has a claim for the transferred utility, do not transfer it again

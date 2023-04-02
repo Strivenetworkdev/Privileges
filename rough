@@ -1,0 +1,21 @@
+await Claim.updateOne(
+      {
+        wallet_address: sender_wallet_address,
+        "nft_collection_addresses.nft_collection_address":
+          nft_collection_address,
+        "nft_collection_addresses.tokens.token_id": token_id,
+        "nft_collection_addresses.tokens.utilities.utility_id": utility_id,
+      },
+      {
+        $set: {
+          "nft_collection_addresses.$[nftCollection].tokens.$[token].utilities.$[utility].transferred": true,
+        },
+      },
+      {
+        arrayFilters: [
+          { "nftCollection.nft_collection_address": nft_collection_address },
+          { "token.token_id": token_id },
+          { "utility.utility_id": utility_id },
+        ],
+      }
+    );
