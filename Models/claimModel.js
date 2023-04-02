@@ -15,7 +15,7 @@ const claimSchema = new mongoose.Schema({
               utility_image: { type: String, required: true },
               utility_description: { type: String, default: "" },
               expiration_time: { type: Date, required: true },
-              is_expirable: { type: ttBoolean, default: true },
+              is_expirable: { type: Boolean, default: true },
               transferred: { type: Boolean, default: false },
               redeemed: { type: Boolean, default: false },
               is_listed: { type: Boolean, default: false },
