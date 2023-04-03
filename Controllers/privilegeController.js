@@ -140,7 +140,8 @@ exports.claimPrivilege = async (req, res) => {
         .json({ message: `Utility ${utility_id} has already been claimed` });
     }
 
-    // Update the privilege database to mark the utility as claimed
+    // Update the privilege database to mark the utility as claimed\
+    // console.log(tokens);
     await Privilege.findOneAndUpdate(
       {
         "nft_details.nft_collection_address": nft_collection_address,
@@ -616,7 +617,7 @@ exports.getCreatedPrivileges = async (req, res) => {
     const result = {};
 
     privileges.forEach((privilege) => {
-      const nftCollectionAddress = privilege.nft_collection_address;
+      const nftCollectionAddress = privilege.nft_details.nft_collection_address;
       const utilities = [];
       var enough = false;
 
