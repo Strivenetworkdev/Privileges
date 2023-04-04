@@ -249,6 +249,7 @@ exports.transferPrivilege = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 exports.redeemPrivilege = async (req, res) => {
   const { wallet_address, nft_collection_address, token_id, utility_id } =
     req.body;
@@ -325,4 +326,60 @@ exports.redeemPrivilege = async (req, res) => {
   }
 };
 
-exports.listPrivilege = async (req, res) => {};
+exports.listPrivilege = async (req, res) => {
+  const { wallet_address, nft_collection_address, token_id, utility_id } =
+    req.body;
+  const { list_price } = req.body;
+
+  try {
+    const claim = await Claim.findOne({
+      wallet_address,
+      "nft_collection_addresses.nft_collection_address": nft_collection_address,
+      "nft_collection_addresses.tokens.token_id": parseInt(token_id, 10),
+      "nft_collection_addresses.tokens.utilities.utility_id": parseInt(
+        utility_id,
+        10
+      ),
+    });
+
+    if (!claim) {
+      return res.status(404).json({
+        message: `Claim not found for token ${token_id} and utility ${utility_id}`,
+      });
+    }
+
+    const utility = claim.nft_collection_addresses[0].tokens[0].utilities.find(
+      (u) => u.utility_id === parseInt(utility_id, 10)
+    );
+
+    if (!utility) {
+      return res.status(404).json({
+        message: `Utility not found for utility_id ${utility_id}`,
+      });
+    }
+
+    if (utility.transferred) {
+      return res.status(400).json({
+        message: "Cannot list a utility that has already been transferred",
+      });
+    }
+
+    if (utility.is_listed) {
+      return res.status(400).json({
+        message: "Cannot list a utility that has already been listed",
+      });
+    }
+
+    utility.is_listed = true;
+    utility.list_price = list_price;
+
+    await claim.save();
+
+    res.status(200).json({
+      message: `Utility ${utility_id} listed successfully with price ${list_price}`,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
