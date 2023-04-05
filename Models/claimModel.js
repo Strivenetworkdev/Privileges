@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const claimSchema = new mongoose.Schema({
   wallet_address: { type: String, required: true },
+  user_name: { type: String, required: true },
+  user_img: { type: String, required: true },
   nft_collection_addresses: [
     {
       nft_collection_address: { type: String, required: true },

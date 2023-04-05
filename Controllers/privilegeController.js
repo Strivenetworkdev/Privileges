@@ -7,6 +7,8 @@ exports.createPrivilege = async (req, res) => {
   const creation_time = new Date();
   const {
     wallet_address,
+    user_name,
+    user_img,
     nft_collection_address,
     nft_collection_name,
     nft_collection_image,
@@ -28,6 +30,8 @@ exports.createPrivilege = async (req, res) => {
       // If a privilege document does not already exist, create a new one
       privilege = new Privilege({
         wallet_address,
+        user_name,
+        user_img,
         nft_details: [
           {
             nft_collection_address,
@@ -97,6 +101,8 @@ exports.claimPrivilege = async (req, res) => {
   const claim_time = new Date();
   const {
     wallet_address,
+    user_name,
+    user_img,
     nft_collection_address,
     token_id,
     utility_id,
@@ -145,14 +151,16 @@ exports.claimPrivilege = async (req, res) => {
     await Privilege.findOneAndUpdate(
       {
         "nft_details.nft_collection_address": nft_collection_address,
-        "tokens.token_id": token_id,
-        "tokens.utilities": { $elemMatch: { utility_id: utility_id } },
+        "tokens.token_id": parseInt(token_id, 10),
+        "tokens.utilities": {
+          $elemMatch: { utility_id: parseInt(utility_id, 10) },
+        },
       },
       { $set: { "tokens.$[token].utilities.is_claimed": true } },
       {
         arrayFilters: [
-          { "token.token_id": token_id },
-          // { "utilities.utility_id": utility_id },
+          { "token.token_id": parseInt(token_id, 10) },
+          { "utilities.utility_id": parseInt(utility_id, 10) },
         ],
       }
     );
@@ -166,6 +174,8 @@ exports.claimPrivilege = async (req, res) => {
       // If the user does not have a claim database, create a new one
       claim = await Claim.create({
         wallet_address,
+        user_name,
+        user_img,
         nft_collection_addresses: [
           {
             nft_collection_address,
@@ -318,7 +328,7 @@ exports.getCreatedPrivileges = async (req, res) => {
   const { wallet_address } = req.params;
 
   try {
-    const privileges = await Privilege.fiind({
+    const privileges = await Privilege.find({
       wallet_address,
     });
     console.log(privileges);

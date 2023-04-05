@@ -383,3 +383,21 @@ exports.listPrivilege = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.getUser = async (req, res) => {
+  const { wallet_address } = req.params;
+  try {
+    const privileges = await Privilege.find({
+      wallet_address,
+    });
+
+    const result = {};
+
+    const user_name = privileges.user_name;
+    const user_img = privileges.user_img;
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

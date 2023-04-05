@@ -26,6 +26,8 @@ const nftSchema = new mongoose.Schema({
 
 const privilegeSchema = new mongoose.Schema({
   wallet_address: { type: String, required: true },
+  user_name: { type: String, required: true },
+  user_img: { type: String, required: true },
   nft_details: [nftSchema],
   tokens: [TokenSchema],
 });
