@@ -318,7 +318,7 @@ exports.getCreatedPrivileges = async (req, res) => {
   const { wallet_address } = req.params;
 
   try {
-    const privileges = await Privilege.find({
+    const privileges = await Privilege.fiind({
       wallet_address,
     });
     console.log(privileges);
