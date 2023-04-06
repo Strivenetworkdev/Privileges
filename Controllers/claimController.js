@@ -387,15 +387,18 @@ exports.listPrivilege = async (req, res) => {
 exports.getUser = async (req, res) => {
   const { wallet_address } = req.params;
   try {
-    const privileges = await Privilege.find({
-      wallet_address,
-    });
+    const privilegeUser = await Privilege.findOne({ wallet_address });
+    if (!privilegeUser) {
+      const claimUser = await Claim.findOne({ wallet_address });
+      if (!claimUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { user_name, user_img } = claimUser;
+      return res.status(200).json({ user_name, user_img });
+    }
 
-    const result = {};
-
-    const user_name = privileges.user_name;
-    const user_img = privileges.user_img;
-    
+    const { user_name, user_img } = privilegeUser;
+    return res.status(200).json({ user_name, user_img });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
